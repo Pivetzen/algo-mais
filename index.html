@@ -193,8 +193,9 @@
   </div>
 
   <script>
-    // Cole aqui a URL do seu Google Sheets publicado como CSV
-    const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSQkfyNXvSqoUG-DDxF2x3b-AS21tNGlY8UCNY5lOXvzt_QhNbGDNy2LFfiZj_fsNtGxrqs7wiaGtmM/pub?output=csv';
+    // ID da sua planilha extraído diretamente do seu print
+    const SPREADSHEET_ID = '1epPhtJBHn5F-bbx-4uYY8jV736ZP5suINCJbrsmv174';
+    const GVIZ_URL = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:json`;
 
     let menuData = {};
     let currentOrder = [];
@@ -216,32 +217,46 @@
       input.value = v;
     }
 
-    // Carrega dados da planilha do Google
+    // Converte e trata valor monetário (ex: "R$ 18,00" -> 18.0)
+    function parsePrice(value) {
+      if (typeof value === 'number') return value;
+      if (!value) return 0;
+      const clean = value.toString().replace('R$', '').replace(/\s/g, '').replace(',', '.');
+      return parseFloat(clean) || 0;
+    }
+
+    // Carrega dados da planilha usando Google Visualizations API
     async function loadMenuFromSheets() {
       const container = document.getElementById('menuContainer');
       try {
-        const response = await fetch(SHEET_CSV_URL);
-        const data = await response.text();
-        
-        const rows = data.split('\n').map(row => row.split(','));
+        const response = await fetch(GVIZ_URL);
+        const rawText = await response.text();
+
+        // Extrai o JSON envelopado na resposta da API da Google
+        const jsonString = rawText.substring(rawText.indexOf('{'), rawText.lastIndexOf('}') + 1);
+        const data = JSON.parse(jsonString);
+
+        const rows = data.table.rows;
         menuData = {};
 
-        // Ignora cabeçalho (i = 1)
-        for (let i = 1; i < rows.length; i++) {
-          if (!rows[i] || rows[i].length < 3) continue;
+        rows.forEach(row => {
+          const cells = row.c;
+          if (cells && cells.length >= 3) {
+            const category = cells[0] && cells[0].v ? cells[0].v.toString().trim() : '';
+            const name = cells[1] && cells[1].v ? cells[1].v.toString().trim() : '';
+            
+            // Pega o valor bruto ou formatado da célula
+            const rawVal = cells[2] ? (cells[2].f || cells[2].v) : '';
+            const price = parsePrice(rawVal);
 
-          const category = rows[i][0].trim();
-          const name = rows[i][1].trim();
-          const priceStr = rows[i][2].replace('R$', '').replace(',', '.').trim();
-          const price = parseFloat(priceStr);
-
-          if (category && name && !isNaN(price)) {
-            if (!menuData[category]) {
-              menuData[category] = [];
+            if (category && name && price > 0) {
+              if (!menuData[category]) {
+                menuData[category] = [];
+              }
+              menuData[category].push({ name, price });
             }
-            menuData[category].push({ name, price });
           }
-        }
+        });
 
         renderMenu();
       } catch (error) {
@@ -249,8 +264,8 @@
         container.innerHTML = `
           <div class="text-center py-8 text-rose-500 text-xs font-semibold">
             <i class="fa-solid fa-circle-exclamation text-xl mb-1"></i>
-            <p>Erro ao carregar o cardápio da planilha.</p>
-            <p class="text-[10px] text-slate-400 font-normal mt-1">Verifique se o link CSV está correto e público.</p>
+            <p>Erro ao carregar a planilha.</p>
+            <p class="text-[10px] text-slate-400 font-normal mt-1">Certifique-se que o compartilhamento da planilha está em "Qualquer pessoa com o link".</p>
           </div>
         `;
       }
