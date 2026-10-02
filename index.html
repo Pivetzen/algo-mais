@@ -3,217 +3,399 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gerador de Pedidos - WhatsApp</title>
+  <title>Gerador de Pedidos com Imagem - WhatsApp</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Biblioteca para converter HTML em Imagem PNG -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
-<body class="bg-slate-100 min-h-screen py-8 px-4 font-sans text-slate-800">
+<body class="bg-slate-100 min-h-screen py-6 px-4 font-sans text-slate-800">
 
-  <div class="max-w-3xl mx-auto bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-200">
-    
-    <!-- Cabeçalho -->
-    <header class="bg-emerald-600 text-white p-6">
-      <div class="flex items-center space-x-3">
-        <i class="fa-brands fa-whatsapp text-3xl"></i>
-        <div>
-          <h1 class="text-xl font-bold">Painel de Montagem de Pedido</h1>
-          <p class="text-xs text-emerald-100">Crie o resumo e envie direto para o WhatsApp do cliente</p>
+  <div class="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+    <!-- COLUNA DA ESQUERDA: CARDÁPIO PRÉ-MONTADO (7 colunas) -->
+    <div class="lg:col-span-7 bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden flex flex-col">
+      <header class="bg-indigo-700 text-white p-4 flex justify-between items-center">
+        <div class="flex items-center space-x-2">
+          <i class="fa-solid fa-utensils text-xl"></i>
+          <h2 class="font-bold text-lg">Cardápio do Estabelecimento</h2>
         </div>
+        <span class="text-xs bg-indigo-800 px-3 py-1 rounded-full text-indigo-200">Selecione os itens</span>
+      </header>
+
+      <!-- Lista de Categorias e Produtos -->
+      <div class="p-4 overflow-y-auto space-y-6 flex-1 max-h-[750px]">
+        
+        <!-- Categoria: Lanches -->
+        <div>
+          <h3 class="font-bold text-indigo-700 text-sm uppercase tracking-wider mb-3 pb-1 border-b border-slate-200">🍔 Lanches & Saborosos</h3>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3" id="menuLanches"></div>
+        </div>
+
+        <!-- Categoria: Bebidas -->
+        <div>
+          <h3 class="font-bold text-indigo-700 text-sm uppercase tracking-wider mb-3 pb-1 border-b border-slate-200">🥤 Bebidas</h3>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3" id="menuBebidas"></div>
+        </div>
+
+        <!-- Categoria: Sobremesas -->
+        <div>
+          <h3 class="font-bold text-indigo-700 text-sm uppercase tracking-wider mb-3 pb-1 border-b border-slate-200">🍰 Sobremesas</h3>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3" id="menuSobremesas"></div>
+        </div>
+
+        <!-- Adicionar Item Avulso / Personalizado -->
+        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
+          <h4 class="font-bold text-xs text-slate-600 mb-2">+ Adicionar Outro Item Fora do Cardápio</h4>
+          <div class="grid grid-cols-12 gap-2">
+            <input type="text" id="customDesc" placeholder="Item personalizado" class="col-span-6 text-xs px-3 py-2 rounded-lg border border-slate-300">
+            <input type="number" id="customPrice" step="0.01" placeholder="R$" class="col-span-4 text-xs px-3 py-2 rounded-lg border border-slate-300">
+            <button onclick="addCustomItem()" class="col-span-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-bold transition">
+              <i class="fa-solid fa-plus"></i>
+            </button>
+          </div>
+        </div>
+
       </div>
-    </header>
+    </div>
 
-    <div class="p-6 space-y-6">
-
-      <!-- Dados do Cliente -->
-      <section class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-4">
-        <h2 class="font-bold text-slate-700 flex items-center">
-          <i class="fa-solid fa-user text-emerald-600 mr-2"></i> Dados do Cliente
+    <!-- COLUNA DA DIREITA: RESUMO DO PEDIDO E AÇÕES (5 colunas) -->
+    <div class="lg:col-span-5 bg-white rounded-2xl shadow-xl border border-slate-200 p-5 flex flex-col justify-between">
+      <div>
+        <h2 class="font-bold text-slate-800 text-lg mb-4 flex items-center justify-between">
+          <span><i class="fa-solid fa-receipt text-indigo-600 mr-2"></i> Pedido Atual</span>
+          <button onclick="clearOrder()" class="text-xs text-rose-600 hover:underline">Limpar</button>
         </h2>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+        <!-- Form Cliente -->
+        <div class="space-y-3 mb-4">
           <div>
-            <label class="block text-xs font-semibold text-slate-600 mb-1">Nome do Cliente</label>
-            <input type="text" id="clientName" placeholder="Ex: João Silva" class="w-full px-3 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-emerald-500 focus:outline-none bg-white">
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Nome do Cliente *</label>
+            <input type="text" id="clientName" placeholder="Ex: Maria Souza" class="w-full text-sm px-3 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
           </div>
           <div>
             <label class="block text-xs font-semibold text-slate-600 mb-1">WhatsApp (com DDD)</label>
-            <input type="tel" id="clientPhone" placeholder="Ex: 85999998888" class="w-full px-3 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-emerald-500 focus:outline-none bg-white">
+            <input type="tel" id="clientPhone" placeholder="Ex: 85999998888" class="w-full text-sm px-3 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
           </div>
         </div>
-      </section>
 
-      <!-- Adicionar Produtos -->
-      <section class="space-y-4">
-        <h2 class="font-bold text-slate-700 flex items-center">
-          <i class="fa-solid fa-cart-plus text-emerald-600 mr-2"></i> Itens do Pedido
-        </h2>
-        <div class="grid grid-cols-12 gap-2">
-          <input type="text" id="itemDesc" placeholder="Descrição do Item / Produto" class="col-span-6 px-3 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
-          <input type="number" id="itemQty" value="1" min="1" placeholder="Qtd" class="col-span-2 px-3 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-emerald-500 focus:outline-none text-center">
-          <input type="number" id="itemPrice" step="0.01" placeholder="R$ Unit." class="col-span-2 px-3 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
-          <button onclick="addItem()" class="col-span-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold flex items-center justify-center transition">
-            <i class="fa-solid fa-plus"></i>
-          </button>
+        <!-- Tabela de Itens Selecionados -->
+        <div class="border border-slate-200 rounded-xl overflow-hidden mb-4">
+          <div class="max-h-48 overflow-y-auto">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-slate-100 text-slate-600 font-bold">
+                <tr>
+                  <th class="p-2">Item</th>
+                  <th class="p-2 text-center">Qtd</th>
+                  <th class="p-2 text-right">Subtotal</th>
+                  <th class="p-2 text-center"></th>
+                </tr>
+              </thead>
+              <tbody id="orderTable">
+                <tr id="emptyMsg">
+                  <td colspan="4" class="text-center py-6 text-slate-400">Nenhum item adicionado.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
 
-        <!-- Tabela de Itens -->
-        <div class="overflow-x-auto">
-          <table class="w-full text-left text-sm border-collapse">
-            <thead>
-              <tr class="border-b border-slate-200 text-slate-500 bg-slate-50">
-                <th class="p-2">Item</th>
-                <th class="p-2 text-center">Qtd</th>
-                <th class="p-2 text-right">Unit.</th>
-                <th class="p-2 text-right">Total</th>
-                <th class="p-2 text-center">Ação</th>
-              </tr>
-            </thead>
-            <tbody id="itemsTable">
-              <tr id="emptyRow">
-                <td colspan="5" class="text-center py-6 text-slate-400">Nenhum item adicionado ao pedido.</td>
-              </tr>
-            </tbody>
-          </table>
+        <!-- Pagamento e Observações -->
+        <div class="space-y-3 text-xs mb-4">
+          <div>
+            <label class="block font-semibold text-slate-600 mb-1">Forma de Pagamento</label>
+            <select id="paymentMethod" class="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white">
+              <option value="PIX">PIX</option>
+              <option value="Cartão de Crédito">Cartão de Crédito</option>
+              <option value="Cartão de Débito">Cartão de Débito</option>
+              <option value="Dinheiro">Dinheiro</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-600 mb-1">Observações / Endereço</label>
+            <input type="text" id="orderNotes" placeholder="Ex: Sem cebola / Entrega na Rua A" class="w-full px-3 py-2 rounded-lg border border-slate-300">
+          </div>
         </div>
-      </section>
-
-      <!-- Observações e Pagamento -->
-      <section class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <label class="block text-xs font-semibold text-slate-600 mb-1">Forma de Pagamento</label>
-          <select id="paymentMethod" class="w-full px-3 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-emerald-500 focus:outline-none bg-white">
-            <option value="PIX">PIX</option>
-            <option value="Cartão de Crédito">Cartão de Crédito</option>
-            <option value="Cartão de Débito">Cartão de Débito</option>
-            <option value="Dinheiro">Dinheiro</option>
-          </select>
-        </div>
-        <div>
-          <label class="block text-xs font-semibold text-slate-600 mb-1">Observações / Endereço</label>
-          <input type="text" id="orderNotes" placeholder="Ex: Entregar na Rua X, Apto 101" class="w-full px-3 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
-        </div>
-      </section>
-
-      <!-- Resumo do Total -->
-      <div class="flex justify-between items-center p-4 bg-slate-900 text-white rounded-xl">
-        <span class="text-lg font-bold">Total do Pedido:</span>
-        <span id="grandTotal" class="text-2xl font-extrabold text-emerald-400">R$ 0,00</span>
       </div>
 
-      <!-- Ações -->
-      <button onclick="sendToWhatsApp()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3.5 rounded-xl shadow-lg hover:shadow-emerald-200 flex items-center justify-center space-x-2 transition text-lg">
-        <i class="fa-brands fa-whatsapp text-2xl"></i>
-        <span>Enviar Resumo para Confirmação</span>
-      </button>
+      <!-- Total e Botões de Ação -->
+      <div class="space-y-3 pt-3 border-t border-slate-200">
+        <div class="flex justify-between items-center text-slate-800 font-bold">
+          <span class="text-sm">Total do Pedido:</span>
+          <span id="grandTotal" class="text-xl text-indigo-700">R$ 0,00</span>
+        </div>
 
+        <div class="grid grid-cols-2 gap-2">
+          <button onclick="downloadImage()" class="bg-slate-800 hover:bg-slate-700 text-white font-bold py-3 rounded-xl text-xs flex items-center justify-center space-x-1.5 transition">
+            <i class="fa-solid fa-download"></i>
+            <span>Baixar Imagem</span>
+          </button>
+          
+          <button onclick="sendToWhatsApp()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded-xl text-xs flex items-center justify-center space-x-1.5 transition">
+            <i class="fa-brands fa-whatsapp text-lg"></i>
+            <span>Enviar no Whats</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- COMPROVANTE OCULTO PARA GERAR A IMAGEM EM ALTA QUALIDADE -->
+  <div class="fixed left-[-9999px] top-[-9999px]">
+    <div id="receiptCard" class="w-[420px] bg-white p-6 font-sans text-slate-800 rounded-none shadow-none">
+      
+      <!-- Cabeçalho do Comprovante -->
+      <div class="text-center pb-4 border-b-2 border-dashed border-slate-300">
+        <div class="w-12 h-12 bg-indigo-700 text-white rounded-full flex items-center justify-center mx-auto mb-2 text-xl font-bold">
+          <i class="fa-solid fa-store"></i>
+        </div>
+        <h1 class="text-xl font-extrabold uppercase tracking-wide text-slate-900">Confirmação de Pedido</h1>
+        <p class="text-xs text-slate-500 mt-1" id="receiptDate">--/--/---- --:--</p>
+      </div>
+
+      <!-- Dados do Cliente -->
+      <div class="py-4 border-b border-slate-200 text-xs space-y-1">
+        <p><strong>Cliente:</strong> <span id="rClientName">--</span></p>
+        <p><strong>Telefone:</strong> <span id="rClientPhone">--</span></p>
+        <p><strong>Pagamento:</strong> <span id="rPayment">--</span></p>
+        <p id="rNotesRow" class="hidden"><strong>Obs/Endereço:</strong> <span id="rNotes">--</span></p>
+      </div>
+
+      <!-- Lista de Produtos -->
+      <div class="py-4 border-b-2 border-dashed border-slate-300">
+        <table class="w-full text-xs">
+          <thead>
+            <tr class="text-slate-400 uppercase text-[10px] text-left border-b border-slate-100">
+              <th class="pb-1">Qtd x Item</th>
+              <th class="pb-1 text-right">Total</th>
+            </tr>
+          </thead>
+          <tbody id="rItemsList" class="divide-y divide-slate-100"></tbody>
+        </table>
+      </div>
+
+      <!-- Totalizador -->
+      <div class="pt-4 flex justify-between items-center">
+        <span class="text-sm font-bold text-slate-700">VALOR TOTAL:</span>
+        <span id="rGrandTotal" class="text-2xl font-black text-indigo-700">R$ 0,00</span>
+      </div>
+
+      <!-- Rodapé -->
+      <div class="mt-6 text-center text-[11px] text-slate-400 border-t border-slate-100 pt-3">
+        Por favor, confirme se todas as informações estão corretas! 😊
+      </div>
     </div>
   </div>
 
   <script>
-    let items = [];
+    // 1. CARDÁPIO PRÉ-MONTADO (Altere ou inclua os itens da sua loja aqui)
+    const menuData = {
+      lanches: [
+        { id: 1, name: "X-Burguer Tradicional", price: 18.00 },
+        { id: 2, name: "X-Salada Especial", price: 22.00 },
+        { id: 3, name: "X-Bacon Supremo", price: 26.50 },
+        { id: 4, name: "Porção de Batata Frita", price: 15.00 }
+      ],
+      bebidas: [
+        { id: 5, name: "Coca-Cola 350ml", price: 6.00 },
+        { id: 6, name: "Suco Natural Laranja 500ml", price: 8.50 },
+        { id: 7, name: "Água Mineral 500ml", price: 4.00 }
+      ],
+      sobremesas: [
+        { id: 8, name: "Pudim de Leite", price: 7.00 },
+        { id: 9, name: "Brownie com Sorvete", price: 14.00 }
+      ]
+    };
 
-    function addItem() {
-      const desc = document.getElementById('itemDesc').value.trim();
-      const qty = parseInt(document.getElementById('itemQty').value);
-      const price = parseFloat(document.getElementById('itemPrice').value);
+    let currentOrder = [];
 
-      if (!desc || isNaN(qty) || isNaN(price) || qty <= 0 || price < 0) {
-        alert('Por favor, preencha a descrição, quantidade e valor do item corretamente.');
+    // Renderiza o Cardápio na Tela
+    function renderMenu() {
+      const renderCategory = (list, containerId) => {
+        const container = document.getElementById(containerId);
+        container.innerHTML = list.map(item => `
+          <div class="bg-slate-50 border border-slate-200 p-2.5 rounded-xl flex justify-between items-center hover:border-indigo-300 transition">
+            <div>
+              <h4 class="font-bold text-xs text-slate-800">${item.name}</h4>
+              <span class="text-xs text-indigo-600 font-semibold">R$ ${item.price.toFixed(2)}</span>
+            </div>
+            <button onclick="addToOrder('${item.name}', ${item.price})" class="w-8 h-8 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold transition flex items-center justify-center">
+              <i class="fa-solid fa-plus"></i>
+            </button>
+          </div>
+        `).join('');
+      };
+
+      renderCategory(menuData.lanches, 'menuLanches');
+      renderCategory(menuData.bebidas, 'menuBebidas');
+      renderCategory(menuData.sobremesas, 'menuSobremesas');
+    }
+
+    // Adiciona Item ao Pedido
+    function addToOrder(name, price) {
+      const existing = currentOrder.find(i => i.name === name);
+      if (existing) {
+        existing.qty += 1;
+      } else {
+        currentOrder.push({ name, price, qty: 1 });
+      }
+      renderOrderTable();
+    }
+
+    // Adiciona Item Personalizado
+    function addCustomItem() {
+      const desc = document.getElementById('customDesc').value.trim();
+      const price = parseFloat(document.getElementById('customPrice').value);
+
+      if (!desc || isNaN(price) || price <= 0) {
+        alert('Informe a descrição e o valor correto do item.');
         return;
       }
 
-      items.push({ desc, qty, price, total: qty * price });
-
-      // Limpar campos
-      document.getElementById('itemDesc').value = '';
-      document.getElementById('itemQty').value = '1';
-      document.getElementById('itemPrice').value = '';
-
-      renderTable();
+      addToOrder(desc, price);
+      document.getElementById('customDesc').value = '';
+      document.getElementById('customPrice').value = '';
     }
 
-    function removeItem(index) {
-      items.splice(index, 1);
-      renderTable();
+    // Altera Quantidade
+    function changeQty(index, change) {
+      currentOrder[index].qty += change;
+      if (currentOrder[index].qty <= 0) {
+        currentOrder.splice(index, 1);
+      }
+      renderOrderTable();
     }
 
-    function renderTable() {
-      const tbody = document.getElementById('itemsTable');
-      tbody.innerHTML = '';
+    // Limpa o Pedido
+    function clearOrder() {
+      currentOrder = [];
+      renderOrderTable();
+    }
 
-      if (items.length === 0) {
-        tbody.innerHTML = '<tr id="emptyRow"><td colspan="5" class="text-center py-6 text-slate-400">Nenhum item adicionado ao pedido.</td></tr>';
+    // Atualiza a Tabela do Pedido
+    function renderOrderTable() {
+      const tbody = document.getElementById('orderTable');
+      if (currentOrder.length === 0) {
+        tbody.innerHTML = '<tr id="emptyMsg"><td colspan="4" class="text-center py-6 text-slate-400">Nenhum item adicionado.</td></tr>';
         document.getElementById('grandTotal').innerText = 'R$ 0,00';
         return;
       }
 
       let grandTotal = 0;
-
-      items.forEach((item, index) => {
-        grandTotal += item.total;
-        const tr = document.createElement('tr');
-        tr.className = 'border-b border-slate-100 hover:bg-slate-50';
-        tr.innerHTML = `
-          <td class="p-2 font-medium">${item.desc}</td>
-          <td class="p-2 text-center">${item.qty}</td>
-          <td class="p-2 text-right">R$ ${item.price.toFixed(2)}</td>
-          <td class="p-2 text-right font-bold text-slate-700">R$ ${item.total.toFixed(2)}</td>
-          <td class="p-2 text-center">
-            <button onclick="removeItem(${index})" class="text-rose-500 hover:text-rose-700 p-1">
-              <i class="fa-solid fa-trash"></i>
-            </button>
-          </td>
+      tbody.innerHTML = currentOrder.map((item, index) => {
+        const total = item.qty * item.price;
+        grandTotal += total;
+        return `
+          <tr class="border-b border-slate-100">
+            <td class="p-2 font-medium text-slate-700">${item.name}</td>
+            <td class="p-2 text-center">
+              <div class="inline-flex items-center space-x-1">
+                <button onclick="changeQty(${index}, -1)" class="w-5 h-5 bg-slate-200 hover:bg-slate-300 rounded text-slate-700 font-bold text-[10px]">-</button>
+                <span class="font-semibold px-1">${item.qty}</span>
+                <button onclick="changeQty(${index}, 1)" class="w-5 h-5 bg-slate-200 hover:bg-slate-300 rounded text-slate-700 font-bold text-[10px]">+</button>
+              </div>
+            </td>
+            <td class="p-2 text-right font-bold text-slate-800">R$ ${total.toFixed(2)}</td>
+            <td class="p-2 text-center">
+              <button onclick="changeQty(${index}, -${item.qty})" class="text-rose-500 hover:text-rose-700">
+                <i class="fa-solid fa-xmark"></i>
+              </button>
+            </td>
+          </tr>
         `;
-        tbody.appendChild(tr);
-      });
+      }).join('');
 
       document.getElementById('grandTotal').innerText = `R$ ${grandTotal.toFixed(2)}`;
     }
 
-    function sendToWhatsApp() {
-      const name = document.getElementById('clientName').value.trim();
-      const rawPhone = document.getElementById('clientPhone').value.replace(/\D/g, '');
+    // Prepara o Template Oculto para Renderizar como Imagem
+    function prepareReceiptCard() {
+      const name = document.getElementById('clientName').value.trim() || 'Cliente';
+      const phone = document.getElementById('clientPhone').value.trim() || 'Não informado';
       const payment = document.getElementById('paymentMethod').value;
       const notes = document.getElementById('orderNotes').value.trim();
 
-      if (!name) {
-        alert('Por favor, informe o nome do cliente.');
-        return;
+      document.getElementById('rClientName').innerText = name;
+      document.getElementById('rClientPhone').innerText = phone;
+      document.getElementById('rPayment').innerText = payment;
+
+      if (notes) {
+        document.getElementById('rNotes').innerText = notes;
+        document.getElementById('rNotesRow').classList.remove('hidden');
+      } else {
+        document.getElementById('rNotesRow').classList.add('hidden');
       }
 
-      if (items.length === 0) {
+      const now = new Date();
+      document.getElementById('receiptDate').innerText = now.toLocaleDateString('pt-BR') + ' às ' + now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+      let grandTotal = 0;
+      const rList = document.getElementById('rItemsList');
+      rList.innerHTML = currentOrder.map(item => {
+        const total = item.qty * item.price;
+        grandTotal += total;
+        return `
+          <tr>
+            <td class="py-2">
+              <div class="font-bold text-slate-800">${item.qty}x ${item.name}</div>
+              <div class="text-[10px] text-slate-400">R$ ${item.price.toFixed(2)} un.</div>
+            </td>
+            <td class="py-2 text-right font-bold text-slate-800">R$ ${total.toFixed(2)}</td>
+          </tr>
+        `;
+      }).join('');
+
+      document.getElementById('rGrandTotal').innerText = `R$ ${grandTotal.toFixed(2)}`;
+    }
+
+    // Baixa a Imagem do Pedido (.PNG)
+    async function downloadImage() {
+      if (currentOrder.length === 0) {
         alert('Adicione ao menos um item ao pedido.');
         return;
       }
 
-      let grandTotal = items.reduce((acc, i) => acc + i.total, 0);
+      prepareReceiptCard();
+      const card = document.getElementById('receiptCard');
 
-      // Montagem do texto formatado para o WhatsApp
-      let message = `📋 *RESUMO DO PEDIDO*\n`;
-      message += `--------------------------------\n`;
-      message += `👤 *Cliente:* ${name}\n`;
-      if (notes) message += `📝 *Obs/Endereço:* ${notes}\n`;
-      message += `--------------------------------\n`;
-      message += `🛒 *ITENS:* \n\n`;
+      const canvas = await html2canvas(card, { scale: 2 });
+      const image = canvas.toDataURL("image/png");
 
-      items.forEach(i => {
-        message += `• ${i.qty}x ${i.desc} - R$ ${i.total.toFixed(2)}\n`;
-      });
-
-      message += `--------------------------------\n`;
-      message += `💳 *Pagamento:* ${payment}\n`;
-      message += `💰 *TOTAL:* *R$ ${grandTotal.toFixed(2)}*\n`;
-      message += `--------------------------------\n\n`;
-      message += `Por favor, confira o pedido acima e nos responda com *CONFIRMADO* para prosseguirmos! 😊`;
-
-      const encodedMessage = encodeURIComponent(message);
-      
-      // Se houver telefone, abre direto a conversa com o número. Caso contrário, abre a seleção de contato.
-      let whatsappUrl = rawPhone 
-        ? `https://api.whatsapp.com/send?phone=55${rawPhone}&text=${encodedMessage}`
-        : `https://api.whatsapp.com/send?text=${encodedMessage}`;
-
-      window.open(whatsappUrl, '_blank');
+      const link = document.createElement('a');
+      link.href = image;
+      link.download = `Pedido_${document.getElementById('clientName').value || 'Cliente'}.png`;
+      link.click();
     }
+
+    // Envia Mensagem com Imagem/Instrução para WhatsApp
+    async function sendToWhatsApp() {
+      if (currentOrder.length === 0) {
+        alert('Adicione ao menos um item ao pedido.');
+        return;
+      }
+
+      const name = document.getElementById('clientName').value.trim();
+      if (!name) {
+        alert('Por favor, digite o nome do cliente.');
+        return;
+      }
+
+      // Baixa a imagem para o atendente anexar no WhatsApp
+      await downloadImage();
+
+      const rawPhone = document.getElementById('clientPhone').value.replace(/\D/g, '');
+      const msg = encodeURIComponent(`Olá ${name}! Segue em anexo a imagem com o resumo do seu pedido para confirmação. 😊`);
+
+      let url = rawPhone 
+        ? `https://api.whatsapp.com/send?phone=55${rawPhone}&text=${msg}`
+        : `https://api.whatsapp.com/send?text=${msg}`;
+
+      window.open(url, '_blank');
+    }
+
+    // Inicializa a aplicação
+    renderMenu();
   </script>
 </body>
 </html>
